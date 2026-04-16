@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --color-brand-50: #f0fdf4;
+  --color-brand-100: #dcfce7;
+  --color-brand-200: #bbf7d0;
+  --color-brand-300: #86efac;
+  --color-brand-400: #4ade80;
+  --color-brand-500: #22c55e;
+  --color-brand-600: #16a34a;
+  --color-brand-700: #15803d;
+
+  --color-surface: #fafafa;
+  --color-fg: #0f172a;
+  --color-surface-dark: #0b0f17;
+  --color-fg-dark: #e5e7eb;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+html {
+  background-color: var(--color-surface);
+  color: var(--color-fg);
+}
+
+html[data-theme="dark"] {
+  background-color: var(--color-surface-dark);
+  color: var(--color-fg-dark);
+}
+
+/* Prevent selection weirdness while drag-painting the grid. */
+.no-select,
+.no-select * {
+  user-select: none;
+  -webkit-user-select: none;
+}
