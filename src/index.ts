@@ -5,7 +5,7 @@ import index from "../static/index.html";
 const getEvent = db.prepare("SELECT * FROM events WHERE id = ?");
 const getAvailability = db.prepare("SELECT participant_name, slots FROM availability WHERE event_id = ?");
 const insertEvent = db.prepare(
-  "INSERT INTO events (id, name, dates, time_start, time_end, timezone) VALUES (?, ?, ?, ?, ?, ?)"
+  "INSERT INTO events (id, name, dates) VALUES (?, ?, ?)"
 );
 const upsertAvailability = db.prepare(
   `INSERT INTO availability (event_id, participant_name, slots, updated_at)
@@ -41,12 +41,12 @@ Bun.serve({
     "/api/events": {
       POST: async (req) => {
         const body = await req.json();
-        const { name, dates, timeStart, timeEnd, timezone } = body;
-        if (!name || !dates?.length || timeStart == null || timeEnd == null) {
+        const { name, dates } = body;
+        if (!name || !dates?.length) {
           return json({ error: "Missing required fields" }, 400);
         }
         const id = nanoid(10);
-        insertEvent.run(id, name, JSON.stringify(dates), timeStart, timeEnd, timezone || "UTC");
+        insertEvent.run(id, name, JSON.stringify(dates));
         return json({ id });
       },
     },

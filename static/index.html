@@ -82,9 +82,37 @@
   /* -- Create Page -- */
   #create-page .form-group { margin-bottom: 20px; }
   #create-page input[type="text"] { width: 100%; font-size: 18px; padding: 12px 16px; }
+  #create-page select { width: 100%; }
 
-  .time-row { display: flex; gap: 16px; align-items: end; flex-wrap: wrap; }
-  .time-row .form-group { flex: 1; min-width: 140px; }
+  .create-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .settings-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .settings-panel .form-group:last-of-type { margin-bottom: 0; }
+
+  .time-range {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .time-range .sep { color: var(--text2); font-size: 14px; text-align: center; }
+
+  @media (min-width: 720px) {
+    .create-layout {
+      grid-template-columns: minmax(0, auto) minmax(260px, 1fr);
+      gap: 32px;
+    }
+    .calendar-col { min-width: 0; }
+  }
 
   .calendar-picker {
     display: inline-grid;
@@ -191,6 +219,15 @@
     user-select: none;
     -webkit-user-select: none;
   }
+  .grid-body { position: relative; }
+  .time-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 56px;
+    width: 3px;
+    pointer-events: none;
+  }
 
   .grid-header {
     display: flex;
@@ -290,33 +327,26 @@
       <input type="text" id="event-name" placeholder="Team sync, Dinner plans...">
     </div>
 
-    <div class="form-group">
-      <label>Select Dates</label>
-      <div class="cal-nav">
-        <button id="cal-prev">&larr;</button>
-        <span id="cal-month-label"></span>
-        <button id="cal-next">&rarr;</button>
+    <div class="create-layout">
+      <div class="calendar-col">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Select Dates</label>
+          <div class="cal-nav">
+            <button id="cal-prev">&larr;</button>
+            <span id="cal-month-label"></span>
+            <button id="cal-next">&rarr;</button>
+          </div>
+          <div id="calendar" class="calendar-picker"></div>
+        </div>
       </div>
-      <div id="calendar" class="calendar-picker"></div>
-    </div>
 
-    <div class="time-row">
-      <div class="form-group">
-        <label>No Earlier Than</label>
-        <select id="time-start"></select>
+      <div class="settings-panel">
+        <p style="font-size: 13px; color: var(--text2); margin-bottom: 16px;">
+          Participants will mark availability across a full 24-hour grid in their own timezone. Times are stored in UTC.
+        </p>
+        <div class="form-group" id="viewer-tz-info" style="margin-bottom: 20px; font-size: 13px; color: var(--text2);"></div>
+        <button class="btn btn-primary" id="create-btn" style="width: 100%; justify-content: center;">Create Event</button>
       </div>
-      <div class="form-group">
-        <label>No Later Than</label>
-        <select id="time-end"></select>
-      </div>
-      <div class="form-group">
-        <label>Timezone</label>
-        <select id="timezone"></select>
-      </div>
-    </div>
-
-    <div style="margin-top: 24px;">
-      <button class="btn btn-primary" id="create-btn">Create Event</button>
     </div>
   </div>
 
@@ -328,6 +358,7 @@
 
     <div class="event-header">
       <h2 id="event-title"></h2>
+      <div id="event-tz-info" style="font-size: 12px; color: var(--text2); margin: 4px 0 12px;"></div>
       <div class="share-url">
         <input type="text" id="share-url" readonly>
         <button class="btn" id="copy-btn">Copy</button>
@@ -451,53 +482,37 @@ function toggleDate(key) {
 }
 
 // ===== Time Selects =====
-function initTimeSelects() {
-  const startSel = $('time-start');
-  const endSel = $('time-end');
-  for (let h = 0; h < 24; h++) {
-    const label = (h === 0 ? 12 : h > 12 ? h - 12 : h) + ':00 ' + (h < 12 ? 'AM' : 'PM');
-    const opt1 = document.createElement('option');
-    opt1.value = h; opt1.textContent = label;
-    if (h === 9) opt1.selected = true;
-    startSel.appendChild(opt1);
-    const opt2 = document.createElement('option');
-    opt2.value = h; opt2.textContent = label;
-    if (h === 17) opt2.selected = true;
-    endSel.appendChild(opt2);
-  }
-  const midOpt = document.createElement('option');
-  midOpt.value = 24; midOpt.textContent = '12:00 AM (next day)';
-  endSel.appendChild(midOpt);
+const USE_24H = new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hour12 === false;
+
+function formatHourLabel(hour, minute = 0) {
+  const mm = String(minute).padStart(2, '0');
+  if (USE_24H) return String(hour % 24).padStart(2, '0') + ':' + mm;
+  const ampm = (hour % 24) < 12 ? 'AM' : 'PM';
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return h12 + ':' + mm + ' ' + ampm;
 }
 
-function initTimezones() {
-  const sel = $('timezone');
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const zones = Intl.supportedValuesOf('timeZone');
-  zones.forEach(z => {
-    const opt = document.createElement('option');
-    opt.value = z; opt.textContent = z;
-    if (z === tz) opt.selected = true;
-    sel.appendChild(opt);
-  });
+const VIEWER_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+function showViewerTz() {
+  const el = $('viewer-tz-info');
+  if (el) el.textContent = 'Your timezone: ' + VIEWER_TZ;
+  const ev = $('event-tz-info');
+  if (ev) ev.textContent = 'Times shown in ' + VIEWER_TZ;
 }
 
 // ===== Create Event =====
 async function createEvent() {
   const name = $('event-name').value.trim();
   const dates = [...selectedDates].sort();
-  const timeStart = parseInt($('time-start').value);
-  const timeEnd = parseInt($('time-end').value);
-  const timezone = $('timezone').value;
 
   if (!name) return alert('Enter an event name');
   if (!dates.length) return alert('Select at least one date');
-  if (timeStart >= timeEnd) return alert('End time must be after start time');
 
   const res = await fetch('/api/events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, dates, timeStart, timeEnd, timezone }),
+    body: JSON.stringify({ name, dates }),
   });
   const data = await res.json();
   history.pushState(null, '', '/' + data.id);
@@ -556,7 +571,7 @@ function joinEvent() {
 // ===== Grid Rendering =====
 function getTimeSlots() {
   const slots = [];
-  for (let h = currentEvent.time_start; h < currentEvent.time_end; h++) {
+  for (let h = 0; h < 24; h++) {
     for (let m = 0; m < 60; m += 15) {
       slots.push({ hour: h, minute: m });
     }
@@ -565,13 +580,12 @@ function getTimeSlots() {
 }
 
 function slotKey(date, hour, minute) {
-  return date + 'T' + String(hour).padStart(2,'0') + ':' + String(minute).padStart(2,'0');
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(y, m - 1, d, hour, minute, 0, 0).toISOString();
 }
 
 function formatTime(hour, minute) {
-  const ampm = hour < 12 ? 'AM' : 'PM';
-  const h = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return h + ':' + String(minute).padStart(2,'0') + ' ' + ampm;
+  return formatHourLabel(hour, minute);
 }
 
 function formatDateShort(dateStr) {
@@ -595,6 +609,26 @@ function buildGridHeader(dates, parent) {
     header.appendChild(col);
   });
   parent.appendChild(header);
+}
+
+function timeGutterTint(hour, minute) {
+  const h = hour + minute / 60;
+  const t = (1 - Math.cos((2 * Math.PI * h) / 24)) / 2;
+  const r = Math.round(30 + 80 * t);
+  const g = Math.round(30 + 65 * t);
+  const b = Math.round(30 + 10 * t);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+
+function buildTimeGradientLine() {
+  const stops = [];
+  for (let h = 0; h <= 24; h++) {
+    stops.push(timeGutterTint(h, 0) + ' ' + ((h / 24) * 100).toFixed(2) + '%');
+  }
+  const line = document.createElement('div');
+  line.className = 'time-line';
+  line.style.background = 'linear-gradient(to bottom, ' + stops.join(', ') + ')';
+  return line;
 }
 
 function buildGridRow(ts, dates, cellFactory) {
@@ -626,6 +660,10 @@ function renderPersonalGrid() {
 
   buildGridHeader(dates, grid);
 
+  const body = document.createElement('div');
+  body.className = 'grid-body';
+  body.appendChild(buildTimeGradientLine());
+
   timeSlots.forEach(ts => {
     const row = buildGridRow(ts, dates, (key) => {
       const cell = document.createElement('div');
@@ -634,9 +672,10 @@ function renderPersonalGrid() {
       cell.dataset.slot = key;
       return cell;
     });
-    grid.appendChild(row);
+    body.appendChild(row);
   });
 
+  grid.appendChild(body);
   attachDragHandlers(grid);
 }
 
@@ -662,6 +701,10 @@ function renderGroupGrid() {
 
   buildGridHeader(dates, grid);
 
+  const body = document.createElement('div');
+  body.className = 'grid-body';
+  body.appendChild(buildTimeGradientLine());
+
   timeSlots.forEach(ts => {
     const row = buildGridRow(ts, dates, (key) => {
       const cell = document.createElement('div');
@@ -682,8 +725,10 @@ function renderGroupGrid() {
       cell.addEventListener('mouseleave', hideHover);
       return cell;
     });
-    grid.appendChild(row);
+    body.appendChild(row);
   });
+
+  grid.appendChild(body);
 }
 
 function renderParticipantsList() {
@@ -712,12 +757,12 @@ function showHover(cell) {
   const names = cell.dataset.names;
   const total = currentEvent.participants.length;
 
-  const [date, time] = slot.split('T');
-  const [h, m] = time.split(':').map(Number);
-  const dateInfo = formatDateShort(date);
+  const dt = new Date(slot);
+  const dateStr = dateKey(dt);
+  const dateInfo = formatDateShort(dateStr);
 
   info.style.display = 'block';
-  $('hover-time').textContent = dateInfo.dow + ' ' + dateInfo.label + ' ' + formatTime(h, m) + ' \u2014 ' + count + '/' + total + ' available';
+  $('hover-time').textContent = dateInfo.dow + ' ' + dateInfo.label + ' ' + formatTime(dt.getHours(), dt.getMinutes()) + ' \u2014 ' + count + '/' + total + ' available';
   $('hover-names').textContent = names || 'Nobody';
 }
 
@@ -818,8 +863,7 @@ $('join-btn').addEventListener('click', joinEvent);
 
 // ===== Init =====
 initCalendar();
-initTimeSelects();
-initTimezones();
+showViewerTz();
 route();
 </script>
 </body>

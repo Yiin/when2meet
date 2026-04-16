@@ -14,9 +14,6 @@ db.exec(`
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     dates TEXT NOT NULL,
-    time_start INTEGER NOT NULL,
-    time_end INTEGER NOT NULL,
-    timezone TEXT NOT NULL DEFAULT 'UTC',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -29,5 +26,9 @@ db.exec(`
     UNIQUE(event_id, participant_name)
   );
 `);
+
+for (const col of ["time_start", "time_end", "timezone"]) {
+  try { db.exec(`ALTER TABLE events DROP COLUMN ${col}`); } catch {}
+}
 
 export default db;
