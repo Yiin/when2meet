@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { nanoid } from "nanoid";
 
 const DB_PATH =
-  process.env.DB_PATH ?? join(import.meta.dir, "..", "..", "data", "when2meet.db");
+  process.env.DB_PATH ?? join(import.meta.dir, "..", "..", "data", "meet.db");
 
 export const db = new Database(DB_PATH, { create: true });
 

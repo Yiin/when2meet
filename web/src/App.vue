@@ -14,7 +14,7 @@ import '@/composables/useTheme'
         data-testid="nav-home"
         class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100"
       >
-        when2meet
+        Meet
       </RouterLink>
       <ThemeToggle />
     </header>

@@ -12,7 +12,7 @@ import { defineConfig, devices } from '@playwright/test'
 const WEB_DIR = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(WEB_DIR, '..')
 const API_DIR = path.join(ROOT, 'api')
-const DB_PATH = path.join(ROOT, 'data', 'when2meet.db')
+const DB_PATH = path.join(ROOT, 'data', 'meet.db')
 
 export default defineConfig({
   testDir: './e2e',

@@ -1,7 +1,7 @@
 import { expect, type Page, type Locator } from '@playwright/test'
 
 /**
- * Shared helpers for when2meet e2e tests.
+ * Shared helpers for Meet e2e tests.
  * All test IDs used here are documented in `USER_STORIES.md`
  * under "Test IDs contract".
  */

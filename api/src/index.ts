@@ -166,4 +166,4 @@ function parseNameAndStringArray(
   return { name, values: arr as string[] };
 }
 
-console.log(`when2meet-api listening on http://localhost:${server.port}`);
+console.log(`meet-api listening on http://localhost:${server.port}`);

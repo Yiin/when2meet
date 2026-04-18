@@ -1,4 +1,4 @@
-# When2Meet — User Stories & Acceptance Spec
+# Meet — User Stories & Acceptance Spec
 
 This document is the acceptance contract for the implementation agent. Tests in
 `/web/e2e/*.spec.ts` exercise every story below. Test IDs listed under

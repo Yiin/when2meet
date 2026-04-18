@@ -46,7 +46,7 @@ COPY --from=build-web /usr/src/app/web/dist ./public
 ENV STATIC_DIR=/usr/src/app/public \
     NODE_ENV=production \
     PORT=3000 \
-    DB_PATH=/data/when2meet.db
+    DB_PATH=/data/meet.db
 
 # The sqlite file lives in /data, which must be mounted as a volume.
 # Bun user needs to write to it.
