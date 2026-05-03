@@ -96,20 +96,22 @@ body::before {
   font-family: var(--font-mono);
 }
 
-input,
-textarea,
-button,
-select {
-  font: inherit;
-  color: inherit;
-  background: transparent;
-}
+@layer base {
+  input,
+  textarea,
+  button,
+  select {
+    font: inherit;
+    color: inherit;
+    background: transparent;
+  }
 
-input:focus,
-textarea:focus,
-button:focus,
-select:focus {
-  outline: none;
+  input:focus,
+  textarea:focus,
+  button:focus,
+  select:focus {
+    outline: none;
+  }
 }
 
 ::selection {
