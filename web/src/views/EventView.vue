@@ -72,58 +72,84 @@ const formattedDates = computed(() => {
 </script>
 
 <template>
-  <div v-if="notFound" class="text-center py-20">
-    <h2 class="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-2">
-      Event not found
+  <div v-if="notFound" class="py-20">
+    <h2 class="font-serif italic text-3xl text-ink">
+      event not found
     </h2>
-    <p class="text-slate-500 dark:text-slate-400">
-      That link doesn't point to an active event.
+    <p class="mt-2 font-mono text-sm text-ink-faint">
+      that link doesn't point to an active event.
     </p>
   </div>
 
-  <div v-else-if="event" class="flex flex-col gap-3">
-    <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+  <div v-else-if="event">
+    <header>
       <h1
+        v-if="event.name"
         data-testid="event-name"
-        class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100"
+        class="font-serif italic text-3xl text-ink leading-none"
       >
         {{ event.name }}
       </h1>
+      <h1
+        v-else
+        data-testid="event-name"
+        class="font-serif italic text-3xl text-ink-faint leading-none"
+      >
+        untitled
+      </h1>
       <p
         data-testid="event-dates"
-        class="text-slate-500 dark:text-slate-400 text-sm"
+        class="mt-3 font-mono text-xs text-ink-faint"
       >
         {{ formattedDates }}
       </p>
-      <div
+      <p
         v-if="currentName"
-        class="ml-auto flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"
+        class="mt-1 font-mono text-xs text-ink-faint"
       >
-        Joined as
+        joined as
         <span
           data-testid="current-participant"
-          class="inline-flex items-center rounded-full bg-brand-100 dark:bg-brand-700/40 text-brand-700 dark:text-brand-200 px-2 py-0.5 font-medium"
-        >
-          {{ currentName }}
-        </span>
-      </div>
-    </div>
+          class="text-ink-soft"
+        >{{ currentName }}</span>
+      </p>
+    </header>
 
-    <ShareUrl :event-id="event.id" />
+    <section class="mt-10">
+      <h2 class="font-mono text-xs uppercase tracking-wide text-ink-soft">
+        share
+      </h2>
+      <div class="cat-rule mt-2 mb-4" />
+      <ShareUrl :event-id="event.id" />
+    </section>
 
-    <JoinForm v-if="!currentName" @join="handleJoin" />
+    <section v-if="!currentName" class="mt-10">
+      <h2 class="font-mono text-xs uppercase tracking-wide text-ink-soft">
+        join
+      </h2>
+      <div class="cat-rule mt-2 mb-4" />
+      <JoinForm @join="handleJoin" />
+    </section>
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <section v-if="currentName" class="flex flex-col">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
+      <section v-if="currentName" class="mt-10">
+        <h2 class="font-mono text-xs uppercase tracking-wide text-ink-soft">
+          your availability
+        </h2>
+        <div class="cat-rule mt-2 mb-4" />
         <PersonalGrid />
       </section>
-      <section class="flex flex-col">
+      <section class="mt-10">
+        <h2 class="font-mono text-xs uppercase tracking-wide text-ink-soft">
+          everyone
+        </h2>
+        <div class="cat-rule mt-2 mb-4" />
         <GroupGrid />
       </section>
     </div>
   </div>
 
-  <div v-else class="text-slate-500 dark:text-slate-400 text-sm text-center py-20">
-    Loading…
+  <div v-else class="py-20 font-mono text-sm text-ink-faint">
+    loading...
   </div>
 </template>

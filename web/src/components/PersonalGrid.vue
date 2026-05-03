@@ -101,31 +101,28 @@ function onCellMouseDown(slot: string, e: MouseEvent) {
 <template>
   <div class="flex flex-col gap-2">
     <div class="flex items-center justify-between">
-      <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-300">
+      <h3 class="font-serif text-sm text-ink">
         Your availability
       </h3>
       <span
         data-testid="save-indicator"
-        class="text-xs px-2 py-1 rounded-full"
-        :class="{
-          'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400':
-            saveState === 'idle',
-          'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300':
-            saveState === 'saving',
-          'bg-brand-100 text-brand-700 dark:bg-brand-700/40 dark:text-brand-200':
-            saveState === 'saved',
-        }"
+        :class="[
+          'font-mono text-xs transition-opacity duration-500',
+          saveState === 'saving' && 'text-ink-faint',
+          saveState === 'saved' && 'text-accent',
+          saveState === 'idle' && 'opacity-0',
+        ]"
       >
-        <template v-if="saveState === 'saving'">Saving…</template>
-        <template v-else-if="saveState === 'saved'">Saved</template>
-        <template v-else>Idle</template>
+        <template v-if="saveState === 'saving'">saving…</template>
+        <template v-else-if="saveState === 'saved'">saved</template>
+        <template v-else>&nbsp;</template>
       </span>
     </div>
 
     <div
       ref="gridEl"
       data-testid="personal-grid"
-      class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-h-[480px] overflow-auto"
+      class="bg-paper"
       :class="{ 'no-select': drag.dragging.value }"
     >
       <div
@@ -134,13 +131,13 @@ function onCellMouseDown(slot: string, e: MouseEvent) {
           gridTemplateColumns: `minmax(70px, auto) repeat(${columns.length}, minmax(60px, 1fr))`,
         }"
       >
-        <div class="sticky top-0 left-0 z-20 bg-slate-50 dark:bg-slate-950 border-b border-r border-slate-200 dark:border-slate-800" />
+        <div class="sticky top-0 left-0 z-20 bg-paper" />
         <div
           v-for="col in columns"
           :key="'col-' + col"
           data-testid="slot-column-header"
           :data-date="col"
-          class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 text-xs font-medium text-slate-600 dark:text-slate-300 text-center py-2 border-b border-slate-200 dark:border-slate-800"
+          class="sticky top-0 z-10 bg-paper font-mono text-xs text-ink-soft text-center py-2"
         >
           {{
             new Date(col + 'T00:00:00').toLocaleDateString(undefined, {
@@ -155,7 +152,7 @@ function onCellMouseDown(slot: string, e: MouseEvent) {
           <div
             data-testid="slot-row-header"
             :data-time="row.hhmm"
-            class="sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 text-[11px] text-right pr-2 pl-1 text-slate-500 dark:text-slate-400 border-r border-b border-slate-100 dark:border-slate-800 leading-none flex items-center justify-end"
+            class="sticky left-0 z-10 bg-paper font-mono text-[10px] text-right pr-2 pl-1 text-ink-faint leading-none flex items-center justify-end"
             :class="{ 'opacity-0': !row.isHour }"
             style="height: 12px"
           >
@@ -167,12 +164,10 @@ function onCellMouseDown(slot: string, e: MouseEvent) {
             data-testid="slot-cell"
             :data-slot="slot"
             :data-filled="filled.has(slot) ? 'true' : 'false'"
-            class="border-b border-slate-100 dark:border-slate-800 cursor-pointer transition-colors"
+            class="cell cursor-pointer transition-colors"
             :class="[
-              filled.has(slot)
-                ? 'bg-brand-500 hover:bg-brand-600'
-                : 'bg-white hover:bg-brand-100 dark:bg-slate-900 dark:hover:bg-brand-700/40',
-              row.isHour && 'border-t border-slate-200 dark:border-slate-800',
+              filled.has(slot) ? 'cell-filled' : 'cell-empty',
+              row.isHour && 'cell-hour',
             ]"
             style="height: 12px"
             @mousedown="onCellMouseDown(slot, $event)"
@@ -182,3 +177,28 @@ function onCellMouseDown(slot: string, e: MouseEvent) {
     </div>
   </div>
 </template>
+
+<style scoped>
+.cell {
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.cell-empty {
+  background-color: transparent;
+}
+
+.cell-empty:hover {
+  background-color: var(--paper-deep);
+}
+
+.cell-filled {
+  background-color: var(--accent);
+  border-right-color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.cell-hour {
+  border-top: 1px solid var(--rule);
+}
+</style>

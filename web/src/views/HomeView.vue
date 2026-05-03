@@ -28,55 +28,67 @@ async function submit() {
 </script>
 
 <template>
-  <div class="flex flex-col items-center">
-    <div class="w-full max-w-4xl">
-      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-2">
-        Plan a meeting
+  <div>
+    <header class="mb-10">
+      <h1 class="font-serif italic text-4xl text-ink leading-none">
+        Plan a meeting<span class="text-accent">.</span>
       </h1>
-      <p class="text-slate-500 dark:text-slate-400 mb-8">
+      <p class="mt-3 font-mono text-sm text-ink-faint">
         Pick dates, share the link, let everyone paint their availability.
       </p>
+    </header>
 
-      <form
-        data-testid="create-event-form"
-        class="grid grid-cols-1 lg:grid-cols-2 gap-6"
-        @submit.prevent="submit"
-      >
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5">
-          <label class="flex flex-col gap-2">
-            <span class="text-sm font-medium text-slate-600 dark:text-slate-300">
-              Event name
-            </span>
-            <input
-              v-model="name"
-              data-testid="event-name-input"
-              type="text"
-              placeholder="Team sync"
-              autocomplete="off"
-              class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </label>
+    <form
+      data-testid="create-event-form"
+      class="flex flex-col"
+      @submit.prevent="submit"
+    >
+      <section class="pb-8">
+        <label class="block">
+          <span class="font-mono text-xs text-ink-soft uppercase tracking-wide">
+            Event name
+          </span>
+          <input
+            v-model="name"
+            data-testid="event-name-input"
+            type="text"
+            placeholder="Team sync"
+            autocomplete="off"
+            class="text-input-serif mt-2"
+          />
+        </label>
+      </section>
 
-          <div class="mt-6 flex flex-col gap-2">
-            <span class="text-sm font-medium text-slate-600 dark:text-slate-300">
-              {{ dates.length === 0 ? 'Choose at least one date' : `${dates.length} date${dates.length === 1 ? '' : 's'} selected` }}
-            </span>
-          </div>
+      <div class="cat-rule" />
 
-          <button
-            type="submit"
-            data-testid="create-event-submit"
-            class="mt-6 w-full inline-flex items-center justify-center rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium px-4 py-2.5 transition disabled:opacity-40 disabled:cursor-not-allowed"
-            :disabled="!canSubmit"
-          >
-            Create event
-          </button>
+      <section class="py-8">
+        <div class="mb-4 flex items-baseline justify-between">
+          <span class="font-mono text-xs text-ink-soft uppercase tracking-wide">
+            Dates
+          </span>
+          <span class="font-mono text-xs text-ink-faint">
+            {{
+              dates.length === 0
+                ? 'choose at least one'
+                : `${dates.length} selected`
+            }}
+          </span>
         </div>
+        <CalendarPicker v-model="dates" />
+      </section>
 
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5">
-          <CalendarPicker v-model="dates" />
-        </div>
-      </form>
-    </div>
+      <div class="cat-rule" />
+
+      <section class="pt-8">
+        <button
+          type="submit"
+          data-testid="create-event-submit"
+          class="btn-bordered disabled:opacity-40 disabled:cursor-not-allowed"
+          :disabled="!canSubmit"
+        >
+          {{ submitting ? 'creating…' : 'create event' }}
+        </button>
+      </section>
+    </form>
   </div>
 </template>

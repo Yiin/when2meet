@@ -1,24 +1,28 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import ThemeToggle from '@/components/ThemeToggle.vue'
+import TimeFormatToggle from '@/components/TimeFormatToggle.vue'
 // Ensure the theme composable runs at app boot so <html> reflects the stored
 // or preferred theme before any route paints.
 import '@/composables/useTheme'
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col">
-    <header class="px-4 sm:px-8 py-2 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 backdrop-blur">
+  <div class="max-w-[720px] mx-auto px-6 pt-12 pb-24">
+    <header class="flex items-center justify-between mb-12">
       <RouterLink
         to="/"
         data-testid="nav-home"
-        class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100"
+        class="font-serif italic text-2xl text-ink"
       >
-        Meet
+        meet<span class="text-accent">.</span>
       </RouterLink>
-      <ThemeToggle />
+      <div class="flex items-center gap-4">
+        <TimeFormatToggle />
+        <ThemeToggle />
+      </div>
     </header>
-    <main class="flex-1 px-4 sm:px-8 py-3 max-w-6xl w-full mx-auto">
+    <main>
       <RouterView />
     </main>
   </div>

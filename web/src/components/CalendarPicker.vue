@@ -55,6 +55,10 @@ const cells = computed<Cell[]>(() => {
   return out
 })
 
+function isToday(d: Date) {
+  return d.getTime() === today.getTime()
+}
+
 function prev() {
   cursor.value = new Date(
     cursor.value.getFullYear(),
@@ -83,30 +87,30 @@ const weekdayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 
 <template>
   <div class="w-full">
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center justify-between mb-4">
       <button
         type="button"
         data-testid="date-picker-prev-month"
-        class="px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+        class="btn-link font-mono text-sm"
         @click="prev"
         aria-label="Previous month"
       >
-        &lsaquo;
+        prev
       </button>
       <div
         data-testid="date-picker-month-label"
-        class="font-medium text-slate-700 dark:text-slate-200"
+        class="font-serif italic text-2xl text-ink"
       >
         {{ monthLabel }}
       </div>
       <button
         type="button"
         data-testid="date-picker-next-month"
-        class="px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+        class="btn-link font-mono text-sm"
         @click="next"
         aria-label="Next month"
       >
-        &rsaquo;
+        next
       </button>
     </div>
 
@@ -114,7 +118,7 @@ const weekdayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
       <div
         v-for="w in weekdayLabels"
         :key="w"
-        class="text-center text-xs font-medium text-slate-400 dark:text-slate-500 py-1"
+        class="text-center font-mono text-xs text-ink-faint uppercase tracking-wide py-1"
       >
         {{ w }}
       </div>
@@ -128,15 +132,12 @@ const weekdayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
         :data-disabled="cell.disabled ? 'true' : undefined"
         :disabled="cell.disabled"
         :class="[
-          'aspect-square rounded text-sm font-medium transition',
-          !cell.inMonth && 'opacity-40',
-          cell.disabled &&
-            'cursor-not-allowed text-slate-300 dark:text-slate-700',
-          !cell.disabled &&
-            !cell.selected &&
-            'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200',
-          cell.selected &&
-            'bg-brand-500 text-white hover:bg-brand-600',
+          'aspect-square flex items-center justify-center font-mono text-sm transition-colors',
+          cell.disabled && 'text-ink-faint opacity-40 cursor-not-allowed',
+          !cell.disabled && !cell.selected && cell.inMonth && 'bg-transparent text-ink-soft hover:bg-paper-deep',
+          !cell.disabled && !cell.selected && !cell.inMonth && 'bg-transparent text-ink-faint hover:bg-paper-deep',
+          cell.selected && 'bg-accent text-paper',
+          !cell.selected && !cell.disabled && isToday(cell.date) && 'text-accent underline underline-offset-2 decoration-1',
         ]"
         @click="toggle(cell)"
       >

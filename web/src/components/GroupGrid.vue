@@ -47,8 +47,9 @@ interface GroupCell {
 function bgStyle(count: number): string {
   if (total.value === 0 || count === 0) return ''
   const ratio = count / total.value
-  const alpha = 0.15 + 0.85 * ratio
-  return `background-color: rgba(34, 197, 94, ${alpha.toFixed(3)});`
+  // Min 12% so the lightest density is still visible, max 90% so it doesn't go opaque.
+  const pct = 12 + 78 * ratio
+  return `background-color: color-mix(in srgb, var(--paper), var(--accent) ${pct.toFixed(1)}%);`
 }
 
 const cellGrid = computed<GroupCell[][]>(() =>
@@ -73,33 +74,28 @@ function onLeave(cell: GroupCell) {
 
 <template>
   <div class="flex flex-col gap-2">
-    <div class="flex items-center justify-between">
-      <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-300">
+    <div class="flex items-baseline justify-between">
+      <h3 class="font-serif italic text-base text-ink">
         Everyone
       </h3>
-      <span
-        class="text-xs text-slate-500 dark:text-slate-400"
-      >
+      <span class="font-mono text-xs text-ink-faint">
         <span data-testid="participant-count">{{ total }}</span>
-        {{ total === 1 ? 'person' : 'people' }}
+        {{ total === 1 ? ' person' : ' people' }}
       </span>
     </div>
 
-    <div
-      data-testid="group-grid"
-      class="overflow-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-    >
+    <div data-testid="group-grid">
       <div
         class="grid relative"
         :style="{
           gridTemplateColumns: `minmax(70px, auto) repeat(${columns.length}, minmax(60px, 1fr))`,
         }"
       >
-        <div class="sticky top-0 left-0 z-20 bg-slate-50 dark:bg-slate-950 border-b border-r border-slate-200 dark:border-slate-800" />
+        <div class="sticky top-0 left-0 z-20 bg-paper border-b border-r border-rule" />
         <div
           v-for="col in columns"
           :key="'gcol-' + col"
-          class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 text-xs font-medium text-slate-600 dark:text-slate-300 text-center py-2 border-b border-slate-200 dark:border-slate-800"
+          class="sticky top-0 z-10 bg-paper font-mono text-xs text-ink-soft text-center py-2 border-b border-rule"
         >
           {{
             new Date(col + 'T00:00:00').toLocaleDateString(undefined, {
@@ -112,8 +108,8 @@ function onLeave(cell: GroupCell) {
 
         <template v-for="(row, ri) in rows" :key="'grow-' + row.hhmm">
           <div
-            class="sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 text-[11px] text-right pr-2 pl-1 text-slate-500 dark:text-slate-400 border-r border-b border-slate-100 dark:border-slate-800 leading-none flex items-center justify-end"
-            :class="{ 'opacity-0': !row.isHour }"
+            class="sticky left-0 z-10 bg-paper font-mono text-[10px] text-ink-faint text-right pr-2 pl-1 border-r border-rule leading-none flex items-center justify-end"
+            :class="{ 'opacity-0': !row.isHour, 'border-t border-rule': row.isHour }"
             style="height: 16px"
           >
             <span v-if="row.isHour">{{ row.label }}</span>
@@ -125,10 +121,8 @@ function onLeave(cell: GroupCell) {
             :data-slot="cell.slot"
             :data-count="cell.count"
             :data-total="total"
-            class="relative border-b border-slate-100 dark:border-slate-800 transition-colors"
-            :class="[
-              row.isHour && 'border-t border-slate-200 dark:border-slate-800',
-            ]"
+            class="relative border-b border-r border-rule transition-colors"
+            :class="[row.isHour && 'border-t border-rule']"
             :style="cell.style"
             style="height: 16px"
             @mouseenter="onEnter(cell)"
@@ -137,10 +131,15 @@ function onLeave(cell: GroupCell) {
             <div
               v-if="hoverSlot === cell.slot"
               data-testid="group-slot-names"
-              class="absolute z-30 left-1/2 -translate-x-1/2 bottom-full mb-1 min-w-max max-w-xs rounded-lg bg-slate-900 text-white text-xs px-2 py-1 shadow-lg pointer-events-none whitespace-pre"
+              class="absolute z-30 left-1/2 -translate-x-1/2 bottom-full mb-1 min-w-max max-w-xs bg-paper border border-rule px-3 py-2 pointer-events-none"
               role="tooltip"
             >
-              {{ cell.names.join(', ') }}
+              <div class="font-serif italic text-sm text-accent">
+                {{ cell.count }} available
+              </div>
+              <div class="font-mono text-xs text-ink-soft mt-1 whitespace-pre-line">
+                {{ cell.names.join('\n') }}
+              </div>
             </div>
           </div>
         </template>

@@ -3,35 +3,209 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  --color-brand-50: #f0fdf4;
-  --color-brand-100: #dcfce7;
-  --color-brand-200: #bbf7d0;
-  --color-brand-300: #86efac;
-  --color-brand-400: #4ade80;
-  --color-brand-500: #22c55e;
-  --color-brand-600: #16a34a;
-  --color-brand-700: #15803d;
+  --color-paper: #f5efe4;
+  --color-paper-deep: #ede5d3;
+  --color-ink: #1d1a17;
+  --color-ink-soft: #5a5347;
+  --color-ink-faint: #8a8170;
+  --color-rule: #c8bfae;
+  --color-accent: #b8472f;
 
-  --color-surface: #fafafa;
-  --color-fg: #0f172a;
-  --color-surface-dark: #0b0f17;
-  --color-fg-dark: #e5e7eb;
+  --font-serif: "Instrument Serif", "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  --paper: #f5efe4;
+  --paper-deep: #ede5d3;
+  --ink: #1d1a17;
+  --ink-soft: #5a5347;
+  --ink-faint: #8a8170;
+  --rule: #c8bfae;
+  --accent: #b8472f;
+}
+
+[data-theme="dark"] {
+  --paper: #1a1614;
+  --paper-deep: #221d18;
+  --ink: #ede5d3;
+  --ink-soft: #b9ad95;
+  --ink-faint: #7a7160;
+  --rule: #3a332a;
+  --accent: #d36249;
+
+  /* Flip Tailwind theme tokens so utilities like bg-paper / text-ink / border-rule
+     render correctly under dark mode without needing dark: prefixes everywhere. */
+  --color-paper: #1a1614;
+  --color-paper-deep: #221d18;
+  --color-ink: #ede5d3;
+  --color-ink-soft: #b9ad95;
+  --color-ink-faint: #7a7160;
+  --color-rule: #3a332a;
+  --color-accent: #d36249;
 }
 
 html,
 body,
 #app {
-  height: 100%;
+  min-height: 100%;
 }
 
 html {
-  background-color: var(--color-surface);
-  color: var(--color-fg);
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-html[data-theme="dark"] {
-  background-color: var(--color-surface-dark);
-  color: var(--color-fg-dark);
+body {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.10 0 0 0 0 0.09 0 0 0 0.9 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+}
+
+* {
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+input,
+textarea,
+button,
+select {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+}
+
+input:focus,
+textarea:focus,
+button:focus,
+select:focus {
+  outline: none;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* 1px horizontal divider */
+.cat-rule {
+  height: 1px;
+  background: var(--rule);
+  margin-top: 4px;
+}
+
+/* Mono text input — transparent, bottom-border on focus */
+.text-input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  padding: 4px 0;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.5;
+  transition: border-color 120ms ease;
+  display: block;
+}
+
+.text-input::placeholder {
+  color: var(--ink-faint);
+  font-style: normal;
+}
+
+.text-input:focus {
+  border-bottom-color: var(--rule);
+}
+
+/* Serif headline input variant */
+.text-input-serif {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  padding: 6px 0;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+  transition: border-color 120ms ease;
+  display: block;
+}
+
+.text-input-serif::placeholder {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.text-input-serif:focus {
+  border-bottom-color: var(--rule);
+}
+
+/* Minimal text button */
+.btn-link {
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 120ms ease;
+  text-align: left;
+}
+
+.btn-link:hover {
+  color: var(--ink);
+}
+
+/* Text button with bottom rule */
+.btn-bordered {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--ink-soft);
+  padding: 4px 0;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.btn-bordered:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 /* Prevent selection weirdness while drag-painting the grid. */
