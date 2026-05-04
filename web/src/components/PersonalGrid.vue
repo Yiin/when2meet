@@ -1,42 +1,24 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, useTemplateRef } from 'vue'
 import { useEventStore } from '@/stores/event'
 import { useDragSelect } from '@/composables/useDragSelect'
 import { useLocaleTime } from '@/composables/useLocaleTime'
-import { slotKey, timeRows } from '@/lib/slots'
+import ScheduleGrid from './ScheduleGrid.vue'
+
+const ROW_HEIGHT = 16
 
 const store = useEventStore()
-const { formatHHMM } = useLocaleTime()
+const { formatHHMM, formatDate } = useLocaleTime()
 
-const gridEl = ref<HTMLElement | null>(null)
+const scheduleRef = useTemplateRef<InstanceType<typeof ScheduleGrid>>('scheduleRef')
 
 onMounted(() => {
-  if (gridEl.value) {
-    // 07:00 is row 28 in 15-min steps; each row is 12px.
-    gridEl.value.scrollTop = 7 * 4 * 12
+  const container = scheduleRef.value?.containerRef
+  if (container) {
+    // 07:00 is row 28 in 15-min steps.
+    container.scrollTop = 7 * 4 * ROW_HEIGHT
   }
 })
-
-interface RowHeader {
-  hhmm: string
-  label: string
-  isHour: boolean
-}
-
-const rows = computed<RowHeader[]>(() =>
-  timeRows().map((r) => ({
-    hhmm: r.hhmm,
-    label: formatHHMM(r.hhmm),
-    isHour: r.hhmm.endsWith(':00'),
-  })),
-)
-
-const columns = computed<string[]>(() => store.dates)
-
-// Precompute slot keys once per (date, hhmm) combination.
-const slotGrid = computed<string[][]>(() =>
-  rows.value.map((row) => columns.value.map((col) => slotKey(col, row.hhmm))),
-)
 
 // Per-drag local delta: set while dragging, reset on drag end.
 const dragDelta = ref<Map<string, boolean> | null>(null)
@@ -65,8 +47,6 @@ function scheduleSave() {
 
 async function doSave() {
   try {
-    // Capture the effective filled set (base + delta), apply via store
-    // (which optimistically updates currentSlots), then drop the delta.
     const next = Array.from(filled.value)
     dragDelta.value = null
     await store.saveAvailability(next)
@@ -96,6 +76,42 @@ function onCellMouseDown(slot: string, e: MouseEvent) {
   if (!dragDelta.value) dragDelta.value = new Map()
   drag.start(slot, e)
 }
+
+interface HoverInfo {
+  slot: string
+  date: string
+  hhmm: string
+}
+
+const hover = ref<HoverInfo | null>(null)
+
+function onHoverEnter(info: HoverInfo) {
+  hover.value = info
+}
+function onHoverLeave(slot: string) {
+  if (hover.value?.slot === slot) hover.value = null
+}
+
+function nextHhmm(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number)
+  const total = (h ?? 0) * 60 + (m ?? 0) + 15
+  const wrapped = total % (24 * 60)
+  const nh = Math.floor(wrapped / 60)
+  const nm = wrapped % 60
+  return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`
+}
+
+function formatRange(hhmm: string): string {
+  return `${formatHHMM(hhmm)}–${formatHHMM(nextHhmm(hhmm))}`
+}
+
+function formatDay(date: string): string {
+  return formatDate(date, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
+}
 </script>
 
 <template>
@@ -120,60 +136,41 @@ function onCellMouseDown(slot: string, e: MouseEvent) {
     </div>
 
     <div
-      ref="gridEl"
       data-testid="personal-grid"
-      class="bg-paper"
       :class="{ 'no-select': drag.dragging.value }"
     >
-      <div
-        class="grid"
-        :style="{
-          gridTemplateColumns: `minmax(70px, auto) repeat(${columns.length}, minmax(60px, 1fr))`,
-        }"
+      <ScheduleGrid
+        ref="scheduleRef"
+        :row-height="ROW_HEIGHT"
+        :header-test-ids="true"
       >
-        <div class="sticky top-0 left-0 z-20 bg-paper" />
-        <div
-          v-for="col in columns"
-          :key="'col-' + col"
-          data-testid="slot-column-header"
-          :data-date="col"
-          class="sticky top-0 z-10 bg-paper font-mono text-xs text-ink-soft text-center py-2"
-        >
-          {{
-            new Date(col + 'T00:00:00').toLocaleDateString(undefined, {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            })
-          }}
-        </div>
-
-        <template v-for="(row, ri) in rows" :key="row.hhmm">
+        <template #cell="{ slotKey: slot, hhmm, date, isHour, rowHeight }">
           <div
-            data-testid="slot-row-header"
-            :data-time="row.hhmm"
-            class="sticky left-0 z-10 bg-paper font-mono text-[10px] text-right pr-2 pl-1 text-ink-faint leading-none flex items-center justify-end"
-            :class="{ 'opacity-0': !row.isHour }"
-            style="height: 12px"
-          >
-            <span v-if="row.isHour">{{ row.label }}</span>
-          </div>
-          <div
-            v-for="slot in slotGrid[ri]"
-            :key="slot"
             data-testid="slot-cell"
             :data-slot="slot"
             :data-filled="filled.has(slot) ? 'true' : 'false'"
-            class="cell cursor-pointer transition-colors"
+            class="cell relative cursor-pointer transition-colors"
             :class="[
               filled.has(slot) ? 'cell-filled' : 'cell-empty',
-              row.isHour && 'cell-hour',
+              isHour && 'cell-hour',
             ]"
-            style="height: 12px"
+            :style="{ height: rowHeight + 'px' }"
             @mousedown="onCellMouseDown(slot, $event)"
-          />
+            @mouseenter="onHoverEnter({ slot, date, hhmm })"
+            @mouseleave="onHoverLeave(slot)"
+          >
+            <div
+              v-if="hover && hover.slot === slot && !drag.dragging.value"
+              class="absolute z-30 left-1/2 -translate-x-1/2 bottom-full mb-1 min-w-max bg-paper border border-rule px-3 py-1 pointer-events-none"
+              role="tooltip"
+            >
+              <div class="font-serif italic text-xs text-accent">
+                {{ formatDay(date) }} — {{ formatRange(hhmm) }}
+              </div>
+            </div>
+          </div>
         </template>
-      </div>
+      </ScheduleGrid>
     </div>
   </div>
 </template>
