@@ -28,6 +28,7 @@ test.describe('Theme toggle', () => {
 
   test.describe('prefers-color-scheme: dark', () => {
     test.use({ colorScheme: 'dark' })
+
     test('first load honors prefers-color-scheme when no stored choice', async ({
       page,
     }) => {
@@ -41,6 +42,7 @@ test.describe('Theme toggle', () => {
 
   test.describe('prefers-color-scheme: light', () => {
     test.use({ colorScheme: 'light' })
+
     test('first load honors prefers-color-scheme: light', async ({ page }) => {
       await page.goto('/')
       await page.evaluate(() => localStorage.removeItem('w2m-theme'))

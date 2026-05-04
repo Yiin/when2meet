@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import CalendarPicker from '@/components/CalendarPicker.vue'
 import { useEventStore } from '@/stores/event'
+import { clearRecent, getRecent, type RecentEvent } from '@/lib/recent'
+import { formatDate } from '@/composables/useLocaleTime'
 
 const router = useRouter()
 const store = useEventStore()
@@ -10,6 +12,7 @@ const store = useEventStore()
 const name = ref('')
 const dates = ref<string[]>([])
 const submitting = ref(false)
+const recents = ref<RecentEvent[]>(getRecent())
 
 const canSubmit = computed(
   () => name.value.trim().length > 0 && dates.value.length > 0 && !submitting.value,
@@ -24,6 +27,37 @@ async function submit() {
   } finally {
     submitting.value = false
   }
+}
+
+function formatRelative(ts: number): string {
+  const diff = Math.max(0, Date.now() - ts)
+  const sec = Math.floor(diff / 1000)
+  if (sec < 60) return 'just now'
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}m ago`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr}h ago`
+  const day = Math.floor(hr / 24)
+  if (day < 7) return `${day}d ago`
+  return formatDate(new Date(ts).toISOString().slice(0, 10), {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+function formatDates(ds: string[]): string {
+  if (ds.length === 0) return ''
+  const sorted = [...ds].sort()
+  const first = formatDate(sorted[0]!, { month: 'short', day: 'numeric' })
+  if (sorted.length === 1) return first
+  const last = formatDate(sorted[sorted.length - 1]!, { month: 'short', day: 'numeric' })
+  return `${first} – ${last} · ${sorted.length} dates`
+}
+
+function onClearHistory() {
+  if (!confirm('clear history?')) return
+  clearRecent()
+  recents.value = []
 }
 </script>
 
@@ -90,5 +124,36 @@ async function submit() {
         </button>
       </section>
     </form>
+
+    <section v-if="recents.length" data-testid="recent-events" class="mt-16">
+      <h2 class="font-mono text-xs uppercase tracking-wide text-ink-soft">
+        recent
+      </h2>
+      <div class="cat-rule mt-2 mb-4" />
+      <div class="recent-list">
+        <router-link
+          v-for="entry in recents"
+          :key="entry.id"
+          :to="`/${entry.id}`"
+          data-testid="recent-event-link"
+          class="recent-row"
+        >
+          <span class="recent-main">
+            <span class="recent-title">{{ entry.name || 'untitled' }}</span>
+            <span v-if="entry.dates.length" class="recent-dates">
+              {{ formatDates(entry.dates) }}
+            </span>
+          </span>
+          <span class="recent-time">{{ formatRelative(entry.visitedAt) }}</span>
+        </router-link>
+      </div>
+      <button
+        type="button"
+        class="clear-history-link mt-6"
+        @click="onClearHistory"
+      >
+        clear history
+      </button>
+    </section>
   </div>
 </template>

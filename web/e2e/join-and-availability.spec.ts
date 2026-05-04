@@ -144,6 +144,7 @@ test.describe('Personal availability grid', () => {
 
 test.describe('Time-format locale', () => {
   test.use({ locale: 'en-US' })
+
   test('en-US locale renders 12-hour labels', async ({ page }) => {
     const id = await createEventViaApi(page, 'Locale US', [todayISO(1)])
     await page.goto(`/${id}`)
@@ -158,6 +159,7 @@ test.describe('Time-format locale', () => {
 
 test.describe('Time-format locale (24h)', () => {
   test.use({ locale: 'en-GB' })
+
   test('en-GB locale renders 24-hour labels', async ({ page }) => {
     const id = await createEventViaApi(page, 'Locale GB', [todayISO(1)])
     await page.goto(`/${id}`)

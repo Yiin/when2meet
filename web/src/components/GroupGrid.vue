@@ -67,16 +67,6 @@ function formatDay(date: string): string {
 
 <template>
   <div class="flex flex-col gap-2">
-    <div class="flex items-baseline justify-between">
-      <h3 class="font-serif italic text-base text-ink">
-        Everyone
-      </h3>
-      <span class="font-mono text-xs text-ink-faint">
-        <span data-testid="participant-count">{{ total }}</span>
-        {{ total === 1 ? ' person' : ' people' }}
-      </span>
-    </div>
-
     <div data-testid="group-grid">
       <ScheduleGrid :row-height="ROW_HEIGHT">
         <template #cell="{ slotKey: slot, hhmm, date, isHour, rowHeight }">

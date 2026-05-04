@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useEventStore } from '@/stores/event'
 import { useEventSocket } from '@/composables/useEventSocket'
 import { STORAGE_KEYS } from '@/lib/storage'
+import { recordRecent } from '@/lib/recent'
 import { formatDate } from '@/composables/useLocaleTime'
 import JoinForm from '@/components/JoinForm.vue'
 import ShareUrl from '@/components/ShareUrl.vue'
@@ -16,6 +17,18 @@ const store = useEventStore()
 const { event, currentName } = storeToRefs(store)
 
 const notFound = ref(false)
+const activeTab = ref<'personal' | 'group'>('group')
+
+watch(
+  currentName,
+  (name, prev) => {
+    // Default to the personal tab on join; leave the user's choice alone otherwise.
+    if (name && !prev) activeTab.value = 'personal'
+  },
+  { immediate: true },
+)
+
+const participantCount = computed(() => event.value?.participants.length ?? 0)
 
 async function init() {
   notFound.value = false
@@ -38,6 +51,14 @@ async function init() {
 watch(() => props.eventId, init, { immediate: true })
 
 useEventSocket(toRef(props, 'eventId'), (e) => store.setEvent(e))
+
+watch(
+  event,
+  (e) => {
+    if (e) recordRecent(e.id, e.name, e.dates)
+  },
+  { immediate: true },
+)
 
 function handleJoin(name: string) {
   store.setCurrentName(name)
@@ -134,25 +155,63 @@ const formattedDates = computed(() => {
       <JoinForm @join="handleJoin" />
     </section>
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
-      <section v-if="currentName" class="mt-10">
-        <h2 class="font-mono text-xs uppercase tracking-wide text-ink-soft">
-          your availability
-        </h2>
-        <div class="cat-rule mt-2 mb-4" />
-        <PersonalGrid />
-      </section>
-      <section class="mt-10">
-        <h2 class="font-mono text-xs uppercase tracking-wide text-ink-soft">
-          everyone
-        </h2>
-        <div class="cat-rule mt-2 mb-4" />
-        <GroupGrid />
-      </section>
-    </div>
+    <section class="mt-10">
+      <div class="flex items-baseline justify-between gap-4 flex-wrap">
+        <div class="flex items-baseline gap-7">
+          <button
+            v-if="currentName"
+            type="button"
+            class="schedule-tab"
+            :class="{ 'schedule-tab--active': activeTab === 'personal' }"
+            @click="activeTab = 'personal'"
+          >
+            your availability
+          </button>
+          <button
+            type="button"
+            class="schedule-tab"
+            :class="{ 'schedule-tab--active': activeTab === 'group' }"
+            @click="activeTab = 'group'"
+          >
+            everyone
+          </button>
+        </div>
+        <span class="font-mono text-xs text-ink-faint">
+          <span data-testid="participant-count">{{ participantCount }}</span>
+          {{ participantCount === 1 ? 'person' : 'people' }}
+        </span>
+      </div>
+      <div class="cat-rule mt-2 mb-4" />
+
+      <PersonalGrid v-if="currentName" v-show="activeTab === 'personal'" />
+      <GroupGrid v-show="!currentName || activeTab === 'group'" />
+    </section>
   </div>
 
   <div v-else class="py-20 font-mono text-sm text-ink-faint">
     loading...
   </div>
 </template>
+
+<style scoped>
+.schedule-tab {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.schedule-tab:hover {
+  color: var(--ink-soft);
+}
+
+.schedule-tab--active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+</style>

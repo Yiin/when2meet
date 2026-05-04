@@ -116,10 +116,7 @@ function formatDay(date: string): string {
 
 <template>
   <div class="flex flex-col gap-2">
-    <div class="flex items-center justify-between">
-      <h3 class="font-serif text-sm text-ink">
-        Your availability
-      </h3>
+    <div class="flex items-center justify-end h-4">
       <span
         data-testid="save-indicator"
         :class="[
