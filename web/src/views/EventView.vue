@@ -125,9 +125,12 @@ const formattedDates = computed(() => {
 
     <section v-if="!currentName" class="mt-10">
       <h2 class="font-mono text-xs uppercase tracking-wide text-ink-soft">
-        join
+        add yourself
       </h2>
-      <div class="cat-rule mt-2 mb-4" />
+      <div class="cat-rule mt-2" />
+      <p class="font-mono text-sm text-ink-faint mb-4">
+        Enter your name so you can paint when you're free.
+      </p>
       <JoinForm @join="handleJoin" />
     </section>
 

@@ -24,8 +24,7 @@ function submit() {
     class="flex items-baseline gap-3"
     @submit.prevent="submit"
   >
-    <label class="flex-1 flex flex-col gap-1">
-      <span class="font-mono text-xs text-ink-soft">your name</span>
+    <div class="flex-1">
       <input
         v-model="name"
         data-testid="participant-name-input"
@@ -34,11 +33,11 @@ function submit() {
         autocomplete="off"
         class="text-input"
       />
-    </label>
+    </div>
     <button
       type="submit"
       data-testid="join-submit"
-      class="btn-bordered disabled:opacity-50"
+      class="font-mono text-sm text-accent border-b border-accent pb-1 transition-opacity hover:opacity-70 disabled:opacity-40 disabled:cursor-not-allowed"
       :disabled="!name.trim()"
     >
       join
