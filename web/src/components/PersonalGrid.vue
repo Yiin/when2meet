@@ -20,17 +20,26 @@ onMounted(() => {
   }
 })
 
-// Per-drag local delta: set while dragging, reset on drag end.
-const dragDelta = ref<Map<string, boolean> | null>(null)
+// Toggles from completed drags awaiting the debounced save. Persists across
+// drags so a second drag started before the save fires doesn't discard the
+// first drag's changes.
+const pendingDelta = ref<Map<string, boolean>>(new Map())
+// The live rectangle for the in-progress drag; null when not dragging. Recomputed
+// on every move (it grows and shrinks), then folded into pendingDelta on drag end.
+const dragRect = ref<{ slots: Set<string>; fill: boolean } | null>(null)
 
 const filled = computed<Set<string>>(() => {
-  const base = store.currentSlots
-  const delta = dragDelta.value
-  if (!delta || delta.size === 0) return base
-  const out = new Set(base)
-  for (const [slot, fill] of delta) {
+  const out = new Set(store.currentSlots)
+  for (const [slot, fill] of pendingDelta.value) {
     if (fill) out.add(slot)
     else out.delete(slot)
+  }
+  const rect = dragRect.value
+  if (rect) {
+    for (const slot of rect.slots) {
+      if (rect.fill) out.add(slot)
+      else out.delete(slot)
+    }
   }
   return out
 })
@@ -48,7 +57,7 @@ function scheduleSave() {
 async function doSave() {
   try {
     const next = Array.from(filled.value)
-    dragDelta.value = null
+    pendingDelta.value = new Map()
     await store.saveAvailability(next)
     saveState.value = 'saved'
     if (savedResetTimer) clearTimeout(savedResetTimer)
@@ -62,18 +71,22 @@ async function doSave() {
 
 const drag = useDragSelect({
   isFilled: (slot) => filled.value.has(slot),
-  onEnter: (slot, mode) => {
-    const delta = dragDelta.value ?? new Map<string, boolean>()
-    delta.set(slot, mode === 'fill')
-    dragDelta.value = new Map(delta)
+  onSelection: (slots, mode) => {
+    dragRect.value = { slots: new Set(slots), fill: mode === 'fill' }
   },
   onEnd: () => {
+    const rect = dragRect.value
+    if (rect) {
+      const delta = new Map(pendingDelta.value)
+      for (const slot of rect.slots) delta.set(slot, rect.fill)
+      pendingDelta.value = delta
+    }
+    dragRect.value = null
     scheduleSave()
   },
 })
 
 function onCellMouseDown(slot: string, e: MouseEvent) {
-  if (!dragDelta.value) dragDelta.value = new Map()
   drag.start(slot, e)
 }
 
@@ -141,10 +154,12 @@ function formatDay(date: string): string {
         :row-height="ROW_HEIGHT"
         :header-test-ids="true"
       >
-        <template #cell="{ slotKey: slot, hhmm, date, isHour, rowHeight }">
+        <template #cell="{ slotKey: slot, hhmm, date, isHour, rowHeight, ri, ci }">
           <div
             data-testid="slot-cell"
             :data-slot="slot"
+            :data-ri="ri"
+            :data-ci="ci"
             :data-filled="filled.has(slot) ? 'true' : 'false'"
             class="cell relative cursor-pointer transition-colors"
             :class="[

@@ -116,6 +116,9 @@ export async function dragAcross(
   if (isoSlots.length === 0) return
   const first = slotCell(page, isoSlots[0])
   const last = slotCell(page, isoSlots[isoSlots.length - 1])
+  // The grid can extend past the viewport; page.mouse operates in viewport
+  // coordinates, so bring the drag origin into view before reading boxes.
+  await first.scrollIntoViewIfNeeded()
   const firstBox = await first.boundingBox()
   const lastBox = await last.boundingBox()
   if (!firstBox || !lastBox) throw new Error('slot cells not laid out')
